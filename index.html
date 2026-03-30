@@ -297,7 +297,7 @@
         <p class="desc">You started a checkout but didn&rsquo;t complete payment. The n8n automation has been triggered and will send a recovery email automatically.</p>
         <div class="automation-box">
           <div class="badge-label">&#9889; n8n Automation Triggered</div>
-          <div class="countdown-num" id="timer-display">2:00</div>
+          <div class="countdown-num" id="timer-display">1:00</div>
           <div class="countdown-sub">Recovery email sends in&hellip;</div>
           <div class="bar-wrap"><div class="bar-fill" id="bar-fill" style="width:100%"></div></div>
         </div>
@@ -318,7 +318,7 @@
 
   <script>
     var WEBHOOK   = "https://sreekanthmekala.app.n8n.cloud/webhook/checkout-demo";
-    var WAIT_SECS = 120;
+    var WAIT_SECS = 60;
 
     var $form      = document.getElementById("state-form");
     var $loading   = document.getElementById("state-loading");
