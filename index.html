@@ -1,37 +1,381 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Checkout Demo</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watcho Jewellers – Secure Checkout</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a;
+      --card: #141414;
+      --border: #252525;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --text: #f0f0f0;
+      --muted: #888;
+      --success: #4caf8c;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    nav {
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 1.2rem; font-weight: 700; letter-spacing: 3px; color: var(--gold); }
+    .logo span { color: var(--text); font-weight: 300; }
+    .secure-badge {
+      font-size: 0.73rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 880px;
+      margin: 56px auto;
+      gap: 28px;
+      padding: 0 24px;
+      width: 100%;
+    }
+    @media (max-width: 640px) {
+      main { grid-template-columns: 1fr; margin: 28px auto; }
+      nav { padding: 16px 20px; }
+    }
+    /* Order Summary */
+    .order-summary {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+    }
+    .section-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .product {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .product-img {
+      width: 70px; height: 70px;
+      background: #1c1c1c;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.75rem;
+      flex-shrink: 0;
+    }
+    .product-name { font-size: 0.88rem; font-weight: 600; margin-bottom: 3px; }
+    .product-variant { font-size: 0.76rem; color: var(--muted); margin-bottom: 8px; }
+    .product-price { font-size: 0.95rem; font-weight: 700; color: var(--gold); }
+    .totals { display: flex; flex-direction: column; gap: 9px; }
+    .total-row { display: flex; justify-content: space-between; font-size: 0.83rem; color: var(--muted); }
+    .total-row.final {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text);
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+    .total-row.final span:last-child { color: var(--gold); }
+    /* Checkout card */
+    .checkout-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+    }
+    #state-form h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 5px; }
+    #state-form .subtitle { font-size: 0.8rem; color: var(--muted); margin-bottom: 22px; }
+    .form-group { margin-bottom: 16px; }
+    label {
+      display: block;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+    input[type="text"], input[type="email"] {
+      width: 100%;
+      background: #0e0e0e;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input::placeholder { color: #383838; }
+    input:focus { border-color: var(--gold); }
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.15s;
+      margin-top: 6px;
+    }
+    .btn-submit:hover { background: var(--gold-light); }
+    .btn-submit:disabled { opacity: 0.35; cursor: not-allowed; }
+    .security-note { font-size: 0.7rem; color: var(--muted); text-align: center; margin-top: 14px; }
+    /* States: shared flex container */
+    .state-panel {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      flex: 1;
+      gap: 14px;
+    }
+    /* Loading */
+    .spinner {
+      width: 42px; height: 42px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .state-panel .sub-text { font-size: 0.82rem; color: var(--muted); }
+    /* Countdown */
+    .state-icon { font-size: 2.4rem; }
+    .state-panel h3 { font-size: 1.05rem; font-weight: 700; }
+    .state-panel .desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      max-width: 270px;
+      line-height: 1.65;
+    }
+    .automation-box {
+      background: rgba(201, 168, 76, 0.07);
+      border: 1px solid rgba(201, 168, 76, 0.22);
+      border-radius: 10px;
+      padding: 16px 18px;
+      width: 100%;
+    }
+    .badge-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+    .countdown-num {
+      font-size: 2.6rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      color: var(--text);
+    }
+    .countdown-sub { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+    .bar-wrap { width: 100%; height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; margin-top: 10px; }
+    .bar-fill { height: 100%; background: var(--gold); border-radius: 99px; transition: width 1s linear; }
+    .email-recipient { font-size: 0.75rem; color: var(--muted); margin-top: 8px; }
+    .email-recipient strong { color: var(--text); }
+    /* Sent */
+    .sent-circle {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: rgba(76, 175, 140, 0.1);
+      border: 2px solid var(--success);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .state-panel.sent h3 { color: var(--success); }
+    /* Demo pill */
+    .demo-pill {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      background: rgba(201, 168, 76, 0.08);
+      border: 1px solid rgba(201, 168, 76, 0.25);
+      color: var(--gold);
+      font-size: 0.62rem;
+      padding: 5px 11px;
+      border-radius: 20px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-  <h2>Checkout</h2>
 
-  <form id="checkout-form">
-    <input name="email" placeholder="Email" required /><br><br>
-    <input name="name" placeholder="Name" required /><br><br>
-    <button type="submit">Proceed to Payment</button>
-  </form>
+  <nav>
+    <div class="logo">WATCHO<span> JEWELLERS</span></div>
+    <div class="secure-badge">
+      <svg width="11" height="13" viewBox="0 0 12 14" fill="none">
+        <path d="M6 0L1 2.5V7c0 2.76 2.14 5.35 5 6 2.86-.65 5-3.24 5-6V2.5L6 0z" fill="#666"/>
+      </svg>
+      Secure Checkout
+    </div>
+  </nav>
+
+  <main>
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <div class="section-label">Order Summary</div>
+      <div class="product">
+        <div class="product-img">&#8987;</div>
+        <div>
+          <div class="product-name">Stainless Steel Chronograph</div>
+          <div class="product-variant">Limited Edition &middot; Rose Gold Dial</div>
+          <div class="product-price">&pound;349.00</div>
+        </div>
+      </div>
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><span>&pound;349.00</span></div>
+        <div class="total-row"><span>Shipping</span><span style="color:#4caf8c">Free</span></div>
+        <div class="total-row"><span>Discount</span><span>&mdash;</span></div>
+        <div class="total-row final"><span>Total</span><span>&pound;349.00</span></div>
+      </div>
+    </div>
+
+    <!-- Checkout Card -->
+    <div class="checkout-card">
+
+      <!-- State 1: Form -->
+      <div id="state-form">
+        <h2>Complete Your Purchase</h2>
+        <p class="subtitle">Enter your details to proceed to payment</p>
+        <form id="checkout-form" novalidate>
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" placeholder="e.g. John Smith" required autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" placeholder="your@email.com" required autocomplete="email" />
+          </div>
+          <button class="btn-submit" type="submit">Proceed to Payment &rarr;</button>
+        </form>
+        <p class="security-note">&#128274; Encrypted &amp; secure &mdash; Powered by n8n automation</p>
+      </div>
+
+      <!-- State 2: Loading spinner -->
+      <div class="state-panel" id="state-loading">
+        <div class="spinner"></div>
+        <p class="sub-text">Connecting to payment gateway&hellip;</p>
+      </div>
+
+      <!-- State 3: Automation countdown -->
+      <div class="state-panel" id="state-countdown">
+        <div class="state-icon">&#128722;</div>
+        <h3>Checkout Session Captured</h3>
+        <p class="desc">You started a checkout but didn&rsquo;t complete payment. The n8n automation has been triggered and will send a recovery email automatically.</p>
+        <div class="automation-box">
+          <div class="badge-label">&#9889; n8n Automation Triggered</div>
+          <div class="countdown-num" id="timer-display">2:00</div>
+          <div class="countdown-sub">Recovery email sends in&hellip;</div>
+          <div class="bar-wrap"><div class="bar-fill" id="bar-fill" style="width:100%"></div></div>
+        </div>
+        <div class="email-recipient" id="email-recipient"></div>
+      </div>
+
+      <!-- State 4: Email sent -->
+      <div class="state-panel sent" id="state-sent">
+        <div class="sent-circle">&#10003;</div>
+        <h3>Recovery Email Sent!</h3>
+        <p id="sent-msg">Check your inbox. A personalised recovery email with 10% off (COMEBACK10) has been delivered automatically via n8n.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="demo-pill">Live Demo</div>
 
   <script>
-    document.getElementById("checkout-form").addEventListener("submit", async (e) => {
+    var WEBHOOK   = "https://sreekanthmekala.app.n8n.cloud/webhook/checkout-demo";
+    var WAIT_SECS = 120;
+
+    var $form      = document.getElementById("state-form");
+    var $loading   = document.getElementById("state-loading");
+    var $countdown = document.getElementById("state-countdown");
+    var $sent      = document.getElementById("state-sent");
+    var $timer     = document.getElementById("timer-display");
+    var $bar       = document.getElementById("bar-fill");
+    var $recipient = document.getElementById("email-recipient");
+    var $sentMsg   = document.getElementById("sent-msg");
+
+    function show(el) { el.style.display = "flex"; }
+    function hide(el) { el.style.display = "none"; }
+
+    function pad(n) { return String(n).padStart(2, "0"); }
+
+    function startCountdown() {
+      var remaining = WAIT_SECS;
+      (function tick() {
+        var m = Math.floor(remaining / 60);
+        var s = remaining % 60;
+        $timer.textContent = m + ":" + pad(s);
+        $bar.style.width = ((remaining / WAIT_SECS) * 100) + "%";
+        if (remaining <= 0) {
+          $timer.textContent = "0:00";
+          $bar.style.width = "0%";
+          setTimeout(function() { hide($countdown); show($sent); }, 600);
+          return;
+        }
+        remaining--;
+        setTimeout(tick, 1000);
+      })();
+    }
+
+    document.getElementById("checkout-form").addEventListener("submit", function(e) {
       e.preventDefault();
+      var name  = document.getElementById("name").value.trim();
+      var email = document.getElementById("email").value.trim();
+      if (!name || !email) return;
 
-      const email = e.target.email.value;
-      const name = e.target.name.value;
+      hide($form);
+      show($loading);
 
-      await fetch("https://sreekanthmekala.app.n8n.cloud/webhook/checkout-demo", {
+      fetch(WEBHOOK, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email,
-          name
-        })
-      });
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, name: name })
+      }).catch(function(err) { console.warn("Webhook:", err); });
 
-      alert("Redirecting to payment...");
+      setTimeout(function() {
+        hide($loading);
+        show($countdown);
+        $recipient.innerHTML = "Recovery email &rarr; <strong>" + email + "</strong>";
+        $sentMsg.textContent = "Check " + email + ". A personalised recovery email with 10% off (code: COMEBACK10) has been delivered automatically via n8n.";
+        startCountdown();
+      }, 2000);
     });
   </script>
+
 </body>
 </html>
